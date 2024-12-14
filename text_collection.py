@@ -23,17 +23,23 @@ def build_search_url(query):
 
 def build_metrics_url(bibcode_list):
     payload = {"bibcodes": bibcode_list,
-          "types": ["histograms"],
-          "histograms": ["citations"]}
+          "types": ["basic", "citations", "indicators"]}
+          #"histograms": ["citations"]}
     results = requests.post("https://api.adsabs.harvard.edu/v1/metrics", \
                         headers={'Authorization': 'Bearer ' + API_TOKEN, 
                                     "Content-type": "application/json"}, \
                         data=json.dumps(payload))
-    response = results.json()
+    return results.json()
 
-    skipped_bibcodes = response['skipped bibcodes']
-    basic_stats = response['basic_stats']
-    citation_stats = response['citation_stats']
+def parse_metrics_response(response):
+    print(response)
+    try: 
+        skipped_bibcodes = response['skipped bibcodes']
+        basic_stats = response['basic_stats']
+        citation_stats = response['citation_stats']
+        indicators = response['indicators']
+    except Exception as e:
+        print(f"Issue with parsing metrics response: {e}")
 
 def generate_query(search_query, fl):
     query = {"q": search_query,
@@ -51,7 +57,7 @@ def parse_search_response(response, fl):
         start_page = int(response['responseHeader']['params']['start'])
         docs = response['response']['docs']
     except Exception as e:
-        print(f"Issue with parsing response: {e}")
+        print(f"Issue with parsing search response: {e}")
 
     try:
         data_list = []
@@ -146,6 +152,13 @@ def list_to_sqlite(data_list, db_path, table_name):
     conn.commit()
     conn.close()
 
+def test_metrics_api():
+    bibcodes = ["2003ApJS..148..175S"]
+    response = build_metrics_url(bibcodes)
+    print(response)
+    #pass
+
+
 def main():
     fl = ['abstract', 'bibcode', 'alternate_bibcode', 'citation_count', 'date', \
           'pubdate', 'doi', 'page', 'read_count', 'title', 'year']
@@ -170,4 +183,5 @@ def main():
             break  # Exit the loop if there's an issue
 
 if __name__ == "__main__":
-    main()
+    test_metrics_api()
+    #main()
